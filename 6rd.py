@@ -3,16 +3,16 @@
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
-# import ipaddress library
+# import needed libraries
+import argparse
 import ipaddress
-
 
 # function to read dhcp.leases file for wan interface
 # and get the value for Option 212 from the last lease
 def read_leasefile(interface):
     try:
         # Do something with the file
-        with open("dhclient.leases." + interface) as f:
+        with open("/var/db/dhclient.leases." + interface) as f:
             for line in f.readlines():
                 if " option-212 " in line:
                     option_line = line
@@ -72,9 +72,14 @@ def convert_option212(value_string):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    ipv6_config = convert_option212(read_leasefile('re0'))
-    if ipv6_config:
-        print('6RD Prefix:              ' + ipv6_config['sixrd_prefix'])
-        print('6RD Border Relay:        ' + ipv6_config['sixrd_border_relay'])
-        print('6RD IPv4 Prefix length:  ' + str(ipv6_config['sixrd_ip4_prefix_len']) + ' bits')
-        print('Delegation Prefix:       ' + '/' + str(ipv6_config['delegation_prefix']))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("interface", help="interface to look for a lease file")
+    args = parser.parse_args()
+
+    if args.interface:
+        ipv6_config = convert_option212(read_leasefile(args.interface))
+        if ipv6_config:
+            print('6RD Prefix:              ' + ipv6_config['sixrd_prefix'])
+            print('6RD Border Relay:        ' + ipv6_config['sixrd_border_relay'])
+            print('6RD IPv4 Prefix length:  ' + str(ipv6_config['sixrd_ip4_prefix_len']) + ' bits')
+            print('Delegation Prefix:       ' + '/' + str(ipv6_config['delegation_prefix']))
