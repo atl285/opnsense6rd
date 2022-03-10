@@ -8,6 +8,7 @@
 # import needed libraries
 import argparse
 import ipaddress
+import os
 
 
 def read_leasefile(interface):
@@ -92,12 +93,24 @@ def convert_option212(value_string):
 if __name__ == '__main__':
     """ main function to run the file as program
     """
+    new_option212 = None
     parser = argparse.ArgumentParser()
-    parser.add_argument("interface", help="interface to look for a lease file")
+    parser.add_argument("-e", help="use environment for receiving input", action="store_true")
+    parser.add_argument("interface", help="interface to look for a lease file", nargs="*")
     args = parser.parse_args()
 
     if args.interface:
-        ipv6_config = convert_option212(read_leasefile(args.interface))
+        # get option 212 from lease file
+        new_option212 = read_leasefile(args.interface)
+    elif args.e:
+        # get option 212 from environment variables
+        old_option212 = os.getenv('old_option_212')
+        new_option212 = os.environ.get('new_option_212')
+        if new_option212 == old_option212:
+            new_option212 = None
+
+    if new_option212:
+        ipv6_config = convert_option212(new_option212)
         if ipv6_config:
             print('6RD Prefix:              ' + ipv6_config['sixrd_prefix'])
             print('6RD Border Relay:        ' + ipv6_config['sixrd_border_relay'])
