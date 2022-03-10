@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/local/bin/python3
 #
 # source is RFC-5969, Chapter 7.1.1.  6rd DHCPv4 Option
 # https://datatracker.ietf.org/doc/html/rfc5969#section-7.1.1
