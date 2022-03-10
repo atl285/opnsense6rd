@@ -89,8 +89,9 @@ def convert_option212(value_string):
              'delegation_prefix': delegation_prefix})
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    """ main function to run the file as program
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("interface", help="interface to look for a lease file")
     args = parser.parse_args()
