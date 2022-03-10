@@ -12,9 +12,9 @@ import ipaddress
 def read_leasefile(interface):
     try:
         # Do something with the file
-        with open('dhclient.leases.' + interface) as f:
+        with open("dhclient.leases." + interface) as f:
             for line in f.readlines():
-                if ' option-212 ' in line:
+                if " option-212 " in line:
                     option_line = line
 
             if option_line is not None:
@@ -47,15 +47,15 @@ def convert_option212(value_string):
         # invalid delegation_prefix
         return None
 
-    # getting the IPv6 6RD Prefix from the 3rd until 18rd bytes
+    # getting the IPv6 6RD Prefix from the 3rd until 18th bytes
     sixrd_prefix = ""
     for index in [2, 4, 6, 8, 10, 12, 14, 16]:
         sixrd_prefix = sixrd_prefix + str('{:0>2s}'.format(option_array[index]) +
-                                        '{:0>2s}:'.format(option_array[index + 1]))
+                                          '{:0>2s}:'.format(option_array[index + 1]))
     sixrd_prefix = str(ipaddress.ip_address(sixrd_prefix[:-1]).compressed)
 
     # getting one or more IPv4 addresses of the
-    # 6rd Border Relay(s) for a given 6rd domain.
+    # 6RD Border Relay(s) for a given 6RD domain.
     sixrd_border_relay = ""
     index = 18
     while index < option_length:
