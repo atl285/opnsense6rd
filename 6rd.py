@@ -1,15 +1,21 @@
-# This is a sample Python script.
+#!/bin/python3
+#
+# source is RFC-5969, Chapter 7.1.1.  6rd DHCPv4 Option
+# https://datatracker.ietf.org/doc/html/rfc5969#section-7.1.1
+#
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 # import needed libraries
 import argparse
 import ipaddress
 
-# function to read dhcp.leases file for wan interface
-# and get the value for Option 212 from the last lease
+
 def read_leasefile(interface):
+    """ read lease file for given interface and returns content
+        of option-212 as string from the last found lease
+    :param interface
+    :return: string
+    """
     try:
         # Do something with the file
         with open("/var/db/dhclient.leases." + interface) as f:
@@ -26,10 +32,11 @@ def read_leasefile(interface):
     return None
 
 
-# converting Option 212 to IPv6 configuration
-# according to RFC5969
-# https://datatracker.ietf.org/doc/html/rfc5969#section-7.1.1
 def convert_option212(value_string):
+    """ convert options-212 string into 6RD configuration for OPNsense
+    :param value_string
+    :return: dictionary
+    """
     # not sure if values always separated by ':'
     option_array = value_string.split(':')
     option_length = len(option_array)
@@ -37,33 +44,45 @@ def convert_option212(value_string):
         # less than minimal possible field length
         return None
 
-    # getting IPv4 Mask Length
+    # IPv4MaskLen   The number of high-order bits that are identical
+    #               across all CE IPv4 addresses within a given 6rd
+    #               domain.  This may be any value between 0 and 32.
+    #               Any value greater than 32 is invalid.
     sixrd_ip4_prefix_len = int(option_array[0], 16)
+    if sixrd_ip4_prefix_len > 32:
+        return None
 
-    # getting IPv6 prefix length
+    # 6rdPrefixLen  The IPv6 prefix length of the SP's 6rd IPv6
+    #               prefix in number of bits.  For the purpose of
+    #               bounds checking by DHCP option processing, the
+    #               sum of (32 - IPv4MaskLen) + 6rdPrefixLen MUST be
+    #               less than or equal to 128.
     sixrd_prefix_len = int(option_array[1], 16)
     delegation_prefix = 32 - sixrd_ip4_prefix_len + sixrd_prefix_len
     if delegation_prefix > 128:
-        # invalid delegation_prefix
         return None
 
-    # getting the IPv6 6RD Prefix from the 3rd until 18th bytes
+    # 6rdPrefix  The service provider's 6rd IPv6 prefix
+    #            represented as a 16-octet IPv6 address.  The bits
+    #            in the prefix after the 6rdPrefixlen number of
+    #            bits are reserved and MUST be initialized to zero
+    #            by the sender and ignored by the receiver.
     sixrd_prefix = ""
     for index in [2, 4, 6, 8, 10, 12, 14, 16]:
         sixrd_prefix = sixrd_prefix + str('{:0>2s}'.format(option_array[index]) +
                                           '{:0>2s}:'.format(option_array[index + 1]))
     sixrd_prefix = str(ipaddress.ip_address(sixrd_prefix[:-1]).compressed)
 
-    # getting one or more IPv4 addresses of the
-    # 6RD Border Relay(s) for a given 6RD domain.
+    # 6rdBRIPv4Address  One or more IPv4 addresses of the 6rd Border
+    #                   Relay(s) for a given 6rd domain.
     sixrd_border_relay = ""
     index = 18
     while index < option_length:
         sixrd_border_relay = str(int(option_array[index], 16)) + '.' + str(int(option_array[index + 1], 16)) + '.' + \
-                           str(int(option_array[index + 2], 16)) + '.' + str(int(option_array[index + 3], 16))
+                             str(int(option_array[index + 2], 16)) + '.' + str(int(option_array[index + 3], 16))
         index += 4
 
-    # return array with values
+    # return dictionary with values
     return ({'sixrd_prefix': sixrd_prefix + '/' + str(sixrd_prefix_len),
              'sixrd_border_relay': sixrd_border_relay,
              'sixrd_ip4_prefix_len': sixrd_ip4_prefix_len,
