@@ -26,7 +26,7 @@ or
 BOUND|RENEW|REBIND|REBOOT)
         check_hostname
         changes="no"
-        $LOGGER "6RD configuration: $(/usr/local/bin/php /root/6rd.php)"
+        $LOGGER "6RD configuration: $(/root/6rd.php)"
         if [ -n "$old_ip_address" ]; then
 ~~~
 
