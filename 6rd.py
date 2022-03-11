@@ -9,7 +9,7 @@
 import argparse
 import ipaddress
 import os
-
+import sys
 
 def read_leasefile(interface):
     """ read lease file for given interface and returns content
@@ -17,16 +17,21 @@ def read_leasefile(interface):
     :param interface
     :return: string
     """
+    new_6rd_config = False
     try:
         # Do something with the file
         with open("/var/db/dhclient.leases." + interface) as f:
+            option_line = ""
             for line in f.readlines():
                 if " option-212 " in line:
+                    if option_line != "" and option_line != line:
+                        # set flag if option 212 has changed
+                        new_6rd_config = True
                     option_line = line
 
             if option_line is not None:
                 option_value = (option_line.split())[2].replace(';', '')
-                return option_value
+                return [new_6rd_config, option_value]
 
     except IOError:
         print("File not accessible")
@@ -96,25 +101,29 @@ if __name__ == '__main__':
     new_option212 = None
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", help="use environment for receiving input", action="store_true")
-    parser.add_argument("interface", help="interface to look for a lease file", nargs="*")
+    parser.add_argument("interface", help="interface to look for a lease file", nargs="?")
     args = parser.parse_args()
 
     if args.interface:
         # get option 212 from lease file
-        new_option212 = read_leasefile(args.interface)
+        new_option212 = read_leasefile(str(args.interface))
     elif args.e:
         # get option 212 from environment variables
-        old_option212 = os.getenv('old_option_212')
-        new_option212 = os.environ.get('new_option_212')
-        if new_option212 == old_option212:
-            new_option212 = None
+        if os.getenv('old_option_212') != os.environ.get('new_option_212'):
+            new_option212 = [True, os.environ.get('new_option_212')]
+        else:
+            new_option212 = [False, os.environ.get('new_option_212')]
 
-    if new_option212:
-        ipv6_config = convert_option212(new_option212)
+    if new_option212[0] == True and new_option212[1] != None:
+        ipv6_config = convert_option212(new_option212[1])
         if ipv6_config:
             print('6RD Prefix:              ' + ipv6_config['sixrd_prefix'])
             print('6RD Border Relay:        ' + ipv6_config['sixrd_border_relay'])
             print('6RD IPv4 Prefix length:  ' + str(ipv6_config['sixrd_ip4_prefix_len']) + ' bits')
             print('Delegation Prefix:       ' + '/' + str(ipv6_config['delegation_prefix']))
+            sys.exit(1)
     else:
         print('No changes.')
+
+    # return 0 - no changes
+    sys.exit(0)
