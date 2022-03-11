@@ -114,16 +114,20 @@ if __name__ == '__main__':
         else:
             new_option212 = [False, os.environ.get('new_option_212')]
 
-    if new_option212[0] == True and new_option212[1] != None:
+    if new_option212[1] != None:
         ipv6_config = convert_option212(new_option212[1])
         if ipv6_config:
+            if new_option212[0]:
+                print('New 6RD configuration!')
+            else:
+                print('No changes.')
             print('6RD Prefix:              ' + ipv6_config['sixrd_prefix'])
             print('6RD Border Relay:        ' + ipv6_config['sixrd_border_relay'])
             print('6RD IPv4 Prefix length:  ' + str(ipv6_config['sixrd_ip4_prefix_len']) + ' bits')
             print('Delegation Prefix:       ' + '/' + str(ipv6_config['delegation_prefix']))
-            sys.exit(1)
-    else:
-        print('No changes.')
+            if new_option212[0]:
+                # return 1 - new configuration
+                sys.exit(1)
 
     # return 0 - no changes
     sys.exit(0)
