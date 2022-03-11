@@ -1,3 +1,4 @@
+#!/usr/local/bin/php
 <?php
 /*
  script to convert option 212 string to 6RD config
