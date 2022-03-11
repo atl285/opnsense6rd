@@ -116,3 +116,5 @@ if __name__ == '__main__':
             print('6RD Border Relay:        ' + ipv6_config['sixrd_border_relay'])
             print('6RD IPv4 Prefix length:  ' + str(ipv6_config['sixrd_ip4_prefix_len']) + ' bits')
             print('Delegation Prefix:       ' + '/' + str(ipv6_config['delegation_prefix']))
+    else:
+        print('No changes.')

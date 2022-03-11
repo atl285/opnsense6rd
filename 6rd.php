@@ -72,6 +72,7 @@ if ($old_option212 != $new_option212) {
     $rd6_cfg = convert_option212($new_option212);
 }
 else {
+    echo "No changes.\n";
     $rd6_cfg = null;
 }
 
