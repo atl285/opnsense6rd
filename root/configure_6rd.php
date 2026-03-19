@@ -18,6 +18,7 @@ function sixrd_log($type, $msg) {
             break;
         case 'warning':
             log_msg("$log_tag: $msg", LOG_WARN);
+            break;
         default:
             log_msg("$log_tag: $msg", LOG_INFO);
             break;
@@ -25,8 +26,9 @@ function sixrd_log($type, $msg) {
 }
 
 // Function to process a single interface
-function process_6rd_interface($config, $logical_if) {
+function process_6rd_interface($logical_if) {
     global $log_tag;
+    global $config;
     
     // 1. Check if interface exists and uses 6rd
     if (!isset($config['interfaces'][$logical_if])) {
@@ -120,7 +122,6 @@ function process_6rd_interface($config, $logical_if) {
 }
 
 // 1. Load configuration
-global $config;
 $config = config_read_array();
 
 // 2. Find all interfaces configured to use 6rd
@@ -134,7 +135,7 @@ if (!isset($config['interfaces']) || !is_array($config['interfaces'])) {
 // 3. Process each 6rd interface
 foreach ($config['interfaces'] as $logical_if => $iface_cfg) {
     if (($iface_cfg['ipaddrv6'] ?? '') === '6rd') {
-        process_6rd_interface($config, $logical_if);
+        process_6rd_interface($logical_if);
     }
 }
 
