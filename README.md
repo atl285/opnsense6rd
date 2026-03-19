@@ -1,52 +1,35 @@
 # opnsense6rd
 
-Scripts for extracting 6RD information from DHCP IPv4 lease on OPNsense
+Lightweight utilities to extract and expose 6RD (IPv6 Rapid Deployment)
+configuration from DHCPv4 leases on OPNsense systems.
 
-1. copy to your OPNsense  (in example `/root` is used)
-2. execute script with wan (`re0`) interface as argument, for example:
+## Contents
+- `root/configure_6rd.php` — optional PHP helper/installer
+- `usr/local/etc/dhclient-exit-hooks.d/6rd_update` — dhclient hook example
+ 
 
-## Manual calling
+## Requirements
+- OPNsense with shell/SSH access
+- DHCP client hooks enabled (`dhclient-script`)
 
-~~~bash
-/root/6rd.py re0
-~~~
+## Installation
 
-## Integrate into dhclient-script
+1. Copy the repository files to your OPNsense host
+2. Ensure `configure_6rd.php` is placed in `/root` and executable if you want to run it manually.
+3. If not existing create `/usr/local/etc/dhclient-exit-hooks.d` and place `6rd_update` there
+4. Make both scripts executable using `chmod +x /root/configure_6rd.php /usr/local/etc/dhclient-exit-hooks.d/6rd_update`
 
-In `/usr/local/opnsense/scripts/interfaces/dhclient-script` modify the case loop as here:
+## Manual execution and testing
 
-~~~bash
-BOUND|RENEW|REBIND|REBOOT)
-        check_hostname
-        changes="no"
-        $LOGGER "6RD configuration: $(/root/6rd.py -e)"
-        if [ -n "$old_ip_address" ]; then
-~~~
+Be carefuly and access the OPNsense firewall over an IPv4 connection from LAN interface, because if something went wrong you are able to repair. Call the PHP helper manually to configure and verify output:
 
-or
+```bash
+/root/configure_6rd.php
+```
 
-~~~bash
-BOUND|RENEW|REBIND|REBOOT)
-        check_hostname
-        changes="no"
-        $LOGGER "6RD configuration: $(/root/6rd.php)"
-        if [ -n "$old_ip_address" ]; then
-~~~
+## Integration
 
-The output of the 6RD configuration should be visible under System > Log Files > General.
+The `configure_6rd.php` is integrated into the OPNsense by the Hook `6rd_update` for the DHCP client. It will be called on every lease renew to update the IPv6 information on the WAN interface. But it will only do something, if WAN interface IPv6 Configuration Type is set to  **6rd Tunnel** and any configuration value has changed.
 
-## Using it with Monit to track changes
-
-**Requirement:** Configured and working Monit service on OPNsense!
-
-Create a Monit Service with following fields:
-
-| Field       | Content                                |
-|-------------|----------------------------------------|
-| Name        | 6rd_change                             |
-| Type        | Custom                                 |
-| Path        | /root/6rd.py re0                       |
-| Tests       | ChangedStatus                          |
-| Description | Check for changes of 6RD configuration |
-
-Please change `re0` to your WAN interface. Regarding your configuration, the status can checked via *Services > Monit > Status* or on Dashboard using the Monit widget. If you have mail configured, any status changes will sending a mail, containing the 6RD configuration.
+License
+This project is licensed under the BSD 2-Clause License. See `LICENSE`.
