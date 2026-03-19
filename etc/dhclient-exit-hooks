@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This script is called by dhclient when certain events occur (like obtaining a new lease, renewing, etc.)
-# We trigger our PHP script only for relevant events (BOUND, RENEW, etc.)
-if [ "$reason" = "BOUND" ] || [ "$reason" = "RENEW" ] || [ "$reason" = "REBIND" ] || [ "$reason" = "REBOOT" ]; then
-    # Path to the PHP script (absolute path is recommended in hook scripts)
-    /usr/local/bin/php /root/configure_6rd.php >> /var/log/6rd_hook.log 2>&1
-fi
