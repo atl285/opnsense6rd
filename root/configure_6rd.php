@@ -133,9 +133,22 @@ if (!isset($config['interfaces']) || !is_array($config['interfaces'])) {
 }
 
 // 3. Process each 6rd interface
-foreach ($config['interfaces'] as $logical_if => $iface_cfg) {
-    if (($iface_cfg['ipaddrv6'] ?? '') === '6rd') {
-        process_6rd_interface($logical_if);
+if (isset($argv[1])) {
+    $phys_if = $argv[1];
+    sixrd_log("info", "Processing only interface '$phys_if' as specified by argument.");
+    foreach ($config['interfaces'] as $logical_if => $iface_cfg) {
+        if ((($iface_cfg['if'] ?? '') === $phys_if) && (($iface_cfg['ipaddrv6'] ?? '') === '6rd')) {
+            process_6rd_interface($logical_if);
+            break;  // Assuming only one logical interface per physical interface
+        }
+    }
+}
+else {
+     sixrd_log("info", "No specific interface provided, processing all 6rd interfaces.");
+    foreach ($config['interfaces'] as $logical_if => $iface_cfg) {
+        if (($iface_cfg['ipaddrv6'] ?? '') === '6rd') {
+            process_6rd_interface($logical_if);
+        }
     }
 }
 
