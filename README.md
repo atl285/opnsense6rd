@@ -41,12 +41,12 @@ The output of the 6RD configuration should be visible under System > Log Files >
 
 Create a Monit Service with following fields:
 
-| Field | Content |
-|-------|---------|
-| Name  | 6rd_change |
-| Type  | Custom     |
-| Path  | /root/6rd.py re0 |
-| Tests | ChangedStatus |
+| Field       | Content                                |
+|-------------|----------------------------------------|
+| Name        | 6rd_change                             |
+| Type        | Custom                                 |
+| Path        | /root/6rd.py re0                       |
+| Tests       | ChangedStatus                          |
 | Description | Check for changes of 6RD configuration |
 
 Please change `re0` to your WAN interface. Regarding your configuration, the status can checked via *Services > Monit > Status* or on Dashboard using the Monit widget. If you have mail configured, any status changes will sending a mail, containing the 6RD configuration.
