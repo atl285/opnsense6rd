@@ -1,4 +1,4 @@
-# opnsense6rd
+# OPNsense auto 6rd configuration
 
 Lightweight utilities to extract and expose 6RD (IPv6 Rapid Deployment)
 configuration from DHCPv4 leases on OPNsense systems.
