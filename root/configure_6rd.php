@@ -9,10 +9,19 @@ require_once("system.inc");
 $log_tag = "6RD-CONFIG";
 
 // Function to log messages to both console and system log
-function sixrd_log($msg) {
+function sixrd_log($type, $msg) {
     global $log_tag;
     echo "$log_tag: $msg\n";
-    log_error("$log_tag: $msg");
+    switch ($type) {
+        case 'error':
+            log_msg("$log_tag: $msg", LOG_ERR);
+            break;
+        case 'warning':
+            log_msg("$log_tag: $msg", LOG_WARN);
+        default:
+            log_msg("$log_tag: $msg", LOG_INFO);
+            break;
+    }
 }
 
 // Function to process a single interface
@@ -21,28 +30,28 @@ function process_6rd_interface($config, $logical_if) {
     
     // 1. Check if interface exists and uses 6rd
     if (!isset($config['interfaces'][$logical_if])) {
-        sixrd_log("Interface '$logical_if' not found in config.xml.");
+        sixrd_log("info", "Interface '$logical_if' not found in config.xml.");
         return false;
     }
     
     if (($config['interfaces'][$logical_if]['ipaddrv6'] ?? '') !== '6rd') {
-        sixrd_log("Interface '$logical_if' does not use '6rd' IPv6 type, skipping.");
+        sixrd_log("info", "Interface '$logical_if' does not use '6rd' IPv6 type, skipping.");
         return false;
     }
     
     // 2. Extract physical interface
     if (!isset($config['interfaces'][$logical_if]['if'])) {
-        sixrd_log("Error: Physical interface not found for '$logical_if'.");
+        sixrd_log("error", "Physical interface not found for '$logical_if'.");
         return false;
     }
     
     $phys_if = $config['interfaces'][$logical_if]['if'];
-    sixrd_log("Processing logical interface '$logical_if' (physical: $phys_if).");
+    sixrd_log("info", "Processing logical interface '$logical_if' (physical: $phys_if).");
     
     // 3. Determine and check lease file
     $lease_file = "/var/db/dhclient.leases.{$phys_if}";
     if (!file_exists($lease_file)) {
-        sixrd_log("Warning: Lease file $lease_file not found for '$logical_if'.");
+        sixrd_log("warning", "Lease file $lease_file not found for '$logical_if'.");
         return false;
     }
     
@@ -51,7 +60,7 @@ function process_6rd_interface($config, $logical_if) {
     preg_match_all('/option-212\s+([^;]+);/', $content, $matches);
     
     if (empty($matches[1])) {
-        sixrd_log("No Option 212 found in lease for '$logical_if'.");
+        sixrd_log("warning", "No Option 212 found in lease for '$logical_if'.");
         return false;
     }
     
@@ -60,7 +69,7 @@ function process_6rd_interface($config, $logical_if) {
     $parts = explode(':', $raw_hex);
     
     if (count($parts) < 22) {
-        sixrd_log("Error: Hex string too short in Option 212 for '$logical_if'.");
+        sixrd_log("error", "Error: Hex string too short in Option 212 for '$logical_if'.");
         return false;
     }
     
@@ -80,7 +89,7 @@ function process_6rd_interface($config, $logical_if) {
     }
     $br_ip = implode('.', $br_parts);
     
-    sixrd_log("Data extracted from Option 212: Prefix=$v6prefix/$v6len, Relay=$br_ip, V4Mask=$v4mask");
+    sixrd_log("info", "Data extracted from Option 212: Prefix=$v6prefix/$v6len, Relay=$br_ip, V4Mask=$v4mask");
     
     // 6. Compare with current configuration and update if needed
     $changed = false;
@@ -93,7 +102,7 @@ function process_6rd_interface($config, $logical_if) {
     foreach ($update_fields as $key => $val) {
         $current = $config['interfaces'][$logical_if][$key] ?? '';
         if ($current !== $val) {
-            sixrd_log("Updating '$logical_if': $key from '$current' to '$val'.");
+            sixrd_log("info", "Updating '$logical_if': $key from '$current' to '$val'.");
             $config['interfaces'][$logical_if][$key] = $val;
             $changed = true;
         }
@@ -102,10 +111,10 @@ function process_6rd_interface($config, $logical_if) {
     if ($changed) {
         write_config("6RD auto-update via script for $logical_if ($phys_if)");
         configd_run("interface reconfigure $logical_if");
-        sixrd_log("Configuration updated and $logical_if ($phys_if) restarted.");
+        sixrd_log("info", "Configuration updated and $logical_if ($phys_if) restarted.");
         return true;  // Signal that config was changed
     } else {
-        sixrd_log("No changes needed for interface '$logical_if'.");
+        sixrd_log("info", "No changes needed for interface '$logical_if'.");
         return false;
     }
 }
@@ -115,13 +124,14 @@ global $config;
 $config = config_read_array();
 
 // 2. Find all interfaces configured to use 6rd
-sixrd_log("Scanning for interfaces configured with 6rd...");
+sixrd_log("info", "Scanning for interfaces configured with 6rd...");
 
 if (!isset($config['interfaces']) || !is_array($config['interfaces'])) {
-    sixrd_log("Error: No interfaces found in configuration.");
+    sixrd_log("info", "No interfaces found in configuration.");
     exit(1);
 }
 
+// 3. Process each 6rd interface
 foreach ($config['interfaces'] as $logical_if => $iface_cfg) {
     if (($iface_cfg['ipaddrv6'] ?? '') === '6rd') {
         process_6rd_interface($config, $logical_if);
