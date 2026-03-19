@@ -1,52 +1,44 @@
-# opnsense6rd
+# OPNsense auto 6rd configuration
 
-Scripts for extracting 6RD information from DHCP IPv4 lease on OPNsense
+Lightweight utilities to extract and expose 6RD (IPv6 Rapid Deployment)
+configuration from DHCPv4 leases on OPNsense systems.
 
-1. copy to your OPNsense  (in example `/root` is used)
-2. execute script with wan (`re0`) interface as argument, for example:
+## Contents
+- `configure_6rd.php` — optional PHP helper/installer
+- `dhclient-script.patch` — dhclient-script patch
+ 
 
-## Manual calling
+## Requirements
+- OPNsense with shell/SSH access
 
-~~~bash
-/root/6rd.py re0
-~~~
+## Installation
 
-## Integrate into dhclient-script
+1. Copy the repository files to your OPNsense host
+2. Ensure `configure_6rd.php` and `dhclient-script.patch` are placed in `/root` and the php script is executable if you want to run it manually.
 
-In `/usr/local/opnsense/scripts/interfaces/dhclient-script` modify the case loop as here:
+## Manual execution and testing
 
-~~~bash
-BOUND|RENEW|REBIND|REBOOT)
-        check_hostname
-        changes="no"
-        $LOGGER "6RD configuration: $(/root/6rd.py -e)"
-        if [ -n "$old_ip_address" ]; then
-~~~
+Be carefuly and access the OPNsense firewall over an IPv4 connection from LAN interface, because if something went wrong you are able to repair. Call the PHP helper manually to configure and verify output:
 
-or
+```bash
+/root/configure_6rd.php
+```
 
-~~~bash
-BOUND|RENEW|REBIND|REBOOT)
-        check_hostname
-        changes="no"
-        $LOGGER "6RD configuration: $(/root/6rd.php)"
-        if [ -n "$old_ip_address" ]; then
-~~~
+## Integration
 
-The output of the 6RD configuration should be visible under System > Log Files > General.
+To integrate it for automatic execution on IP configuration changes, the `/usr/local/opnsense/scripts/interfaces/dhclient-script` has to be patched using the `dhclient-script.patch`. The patch can be applied using the following command:
 
-## Using it with Monit to track changes
+```bash
+patch /usr/local/opnsense/scripts/interfaces/dhclient-script < /root/dhclient-script.patch
+```
 
-**Requirement:** Configured and working Monit service on OPNsense!
+After OPNsense updates check if the patch has to be re-applied. To reverse the patch execute the following command:
 
-Create a Monit Service with following fields:
+```bash
+patch -R /usr/local/opnsense/scripts/interfaces/dhclient-script < /root/dhclient-script.patch
+```
 
-| Field       | Content                                |
-|-------------|----------------------------------------|
-| Name        | 6rd_change                             |
-| Type        | Custom                                 |
-| Path        | /root/6rd.py re0                       |
-| Tests       | ChangedStatus                          |
-| Description | Check for changes of 6RD configuration |
 
-Please change `re0` to your WAN interface. Regarding your configuration, the status can checked via *Services > Monit > Status* or on Dashboard using the Monit widget. If you have mail configured, any status changes will sending a mail, containing the 6RD configuration.
+## License
+
+This project is licensed under the BSD 2-Clause License. See `LICENSE`.
