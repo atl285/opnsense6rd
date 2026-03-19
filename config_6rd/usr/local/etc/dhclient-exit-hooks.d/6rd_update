@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Das Skript wird vom dhclient bei Statusänderungen aufgerufen.
+# Wir triggern unser PHP-Skript nur bei relevanten Ereignissen (BOUND, RENEW, etc.)
+if [ "$reason" = "BOUND" ] || [ "$reason" = "RENEW" ] || [ "$reason" = "REBIND" ] || [ "$reason" = "REBOOT" ]; then
+    # Pfad zum PHP-Skript (absolut)
+    /usr/local/bin/php /root/configure_6rd.php >> /var/log/6rd_hook.log 2>&1
+fi
