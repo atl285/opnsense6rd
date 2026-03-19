@@ -4,8 +4,8 @@ Lightweight utilities to extract and expose 6RD (IPv6 Rapid Deployment)
 configuration from DHCPv4 leases on OPNsense systems.
 
 ## Contents
-- `root/configure_6rd.php` — optional PHP helper/installer
-- `usr/local/etc/dhclient-exit-hooks.d/6rd_update` — dhclient hook example
+- `configure_6rd.php` — optional PHP helper/installer
+- `dhclient-script.patch` — dhclient-script patch
  
 
 ## Requirements
